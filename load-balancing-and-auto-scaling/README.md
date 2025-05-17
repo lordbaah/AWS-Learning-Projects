@@ -64,7 +64,7 @@ The web application is deployed across **multiple Availability Zones (AZs)** in 
 
 **EC2 Security Group**
 
-- HTTP (80) from ALB SG
+- HTTP (80) from ALB Security Group
 - SSH (22) from anywhere 0.0.0.0/0 _(lock in production)_
 
 ![EC2 Security Group](./screenshots/ec2-security-group.png)
