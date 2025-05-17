@@ -1,101 +1,198 @@
-# AWS Load Balancer and Auto Scaling Deployment
+# 🚀 AWS Load Balancer and Auto Scaling Deployment
 
-This project demonstrates how to build a highly available web application using **Amazon EC2**, **Application Load Balancer**, and **Auto Scaling Group** in a custom VPC. The app is deployed across two Availability Zones in **us-east (N. Virginia)** to ensure scalability and fault tolerance.
+![AWS](https://img.shields.io/badge/AWS-AutoScaling-orange)
 
-## 🧠 Key Concepts
+This project demonstrates how to build a **highly available, fault-tolerant, and scalable** web application architecture using **Amazon EC2**, **Application Load Balancer (ALB)**, and **Auto Scaling Group (ASG)** within a custom **Virtual Private Cloud (VPC)**.
 
-- Custom VPC with multiple public subnets
-- EC2 Launch Template with Apache setup
-- Application Load Balancer (ALB) with health checks
-- Auto Scaling Group triggered by CPU usage
-- Real-time display of Availability Zone via EC2 metadata
+The web application is deployed across **multiple Availability Zones (AZs)** in the `us-east-1` (N. Virginia) region to ensure continuous availability, even in case of AZ failures. Auto Scaling dynamically adjusts the number of EC2 instances based on **CPU utilization**.
+
+## 📚 Key Concepts
+
+- Custom VPC with isolated networking
+- Public subnets in multiple AZs
+- Launch Template with Apache pre-installed using a custom user-data script
+- Application Load Balancer (ALB) to distribute traffic
+- Target Group with health checks on each instance
+- Auto Scaling Group (ASG) triggered by CPU metrics
+- Dynamic Availability Zone (AZ) detection on webpage via EC2 instance metadata
 
 ## 🗺️ Architecture Diagram
 
-_(Insert architecture image here, e.g. `architecture/auto-scaling-diagram.png`)_
+![Architecture Diagram](./auto-scaling-diagram.png)
 
 ## 🛠️ Step-by-Step Deployment Guide
 
 ### ✅ 1. Create a Custom VPC
 
-- Name: `MyCustomVpc`
-- IPv4 CIDR block: `1.0.0.0/16`
+- Name: MyCustomVpc
+- IPv4 CIDR Block: 10.0.0.0/16
 
-### ✅ 2. Create Public Subnets
+![VPC Created](./screenshots/vpc-created.png)
 
-- `PublicSubnet-1`
-  - CIDR: `1.0.1.0/24`
-  - AZ: `us-east-1a`
-- `PublicSubnet-2`
-  - CIDR: `10.0.2.0/24`
-  - AZ: `us-east-1b`
-- Enable Auto-assign Public IP for both subnets
+### ✅ 2. Create Two Public Subnets
 
-### ✅ 3. Internet Gateway and Routing
+| Subnet Name    | CIDR Block  | Availability Zone |
+| -------------- | ----------- | ----------------- |
+| PublicSubnet-1 | 10.0.1.0/24 | us-east-1a        |
+| PublicSubnet-2 | 10.0.2.0/24 | us-east-1b        |
 
-- Create an **Internet Gateway** and attach it to `MyCustomVpc`
-- Create a **Route Table**:
-  - Add route: `0.0.0.0/0` → Internet Gateway
-  - Associate with both public subnets
+- Enable Auto-assign public IPv4 address for both subnets
+
+![Public Subnets](./screenshots/public-subnets-1.png)
+![Public Subnets](./screenshots/public-subnets-2.png)
+![Public Subnets Created](./screenshots/public-subnets-created.png)
+![Enable Auto Assign IP](./screenshots/enable-auto-ip.png)
+
+### ✅ 3. Internet Gateway and Route Table
+
+- Create Internet Gateway and attach to VPC
+- Add route 0.0.0.0/0 to IGW in a Route Table
+- Associate Route Table with both public subnets
+
+![Internet Gateway](./screenshots/internet-gateway-created.png)
+![Internet Gateway Attached to VPC](./screenshots/internet-gateway-attach.png)
+![Route Table Created](./screenshots/route-table-created.png)
+![Route Table IGW route](./screenshots/route-table-attached-IGW.png)
+![Route Table Subnet Association](./screenshots/route-table-asso-Subnet.png)
 
 ### ✅ 4. Create Security Groups
 
-- **ALB Security Group**
-  - Inbound: HTTP (80) from Anywhere `0.0.0.0/0`
-- **Web Server Security Group**
-  - Inbound:
-    - HTTP (80) from ALB Security Group
-    - SSH (22) from Anywhere `0.0.0.0/0`
+**ALB Security Group**
+
+- HTTP (80) from anywhere 0.0.0.0/0  
+  ![ALB Security Group](./screenshots/alb-security-group.png)
+
+**EC2 Security Group**
+
+- HTTP (80) from ALB SG
+- SSH (22) from anywhere 0.0.0.0/0 _(lock in production)_
+
+![EC2 Security Group](./screenshots/ec2-security-group.png)
+![EC2 Security Group](./screenshots/ec2-security-group-2.png)
 
 ### ✅ 5. Create Launch Template
 
-- Use **Amazon Linux 2023**
-- Instance Type: `t2.micro`
-- Use the script below in **Advanced → User data** during template creation:
-  ![Script](./user-script.sh)
+- OS: Amazon Linux 2023
+- Instance type: t2.micro
+- Attach: Web Server Security Group
+- **Important: Enable Auto-assign Public IP under Advanced network settings**
+- User Data: `/user-data.sh`
 
-### ✅ 6. Create a Target Group
+![Launch Template Part1](./screenshots/launch-template-1.png)
+![Launch Template Part2](./screenshots/launch-template-2.png)
 
-- Target type: **Instances**
-- Protocol: **HTTP**
-- Port: **80**
-- Health check path: `/health.html`
+#### 🔧 Network Interface in Launch Template
+
+![Network Interface Setup](./screenshots/launch-template-network.png)
+![User Data](./screenshots/user-script.png)
+
+Example `user-data.sh`:
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>Hello from $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</h1>" > /var/www/html/index.html
+echo "<h1>Status: OK</h1>" > /var/www/html/health.html
+```
+
+### ✅ 6. Create Target Group
+
+- Type: Instance
+- Protocol: HTTP, Port: 80
+- VPC: Custom VPC
+- Health Check Path: /health.html
+
+![Creating Target Group](./screenshots/target-group-1.png)
+![Creating Target Group](./screenshots/target-group.png)
+![Target Group Created](./screenshots/target-group-created.png)
 
 ### ✅ 7. Create Application Load Balancer
 
-- Scheme: **Internet-facing**
-- Network mapping: Select both public subnets
-- Security Group: **ALB Security Group**
-- Listener: Forward to the **Target Group**
+- Internet-facing
+- Listener: HTTP (80)
+- VPC: Custom VPC
+- Use both public subnets
+- Use ALB Security Group
+- Forward to Target Group
+
+![Creating Load Balancer](./screenshots/load-balancer-1.png)
+![Creating Load Balancer](./screenshots/load-balancer-2.png)
+![Creating Load Balancer](./screenshots/load-balancer-3.png)
 
 ### ✅ 8. Create Auto Scaling Group
 
-- Use the **Launch Template**
-- VPC: `MyCustomVpc`
-- Subnets: Both public subnets
-- Attach to **Target Group**
+- Launch Template: Use the one created earlier
+- Don’t override template settings
+- VPC + Subnets: Select both public subnets
+- Attach to Target Group
+- Desired Capacity: 2
+- Minimum Capacity: 1
+- Maximum Capacity: 3
 - **Scaling Policy**:
   - Type: Target tracking
-  - Metric: **Average CPU utilization**
-  - Target value: **30%**
+  - Metric: Average CPU utilization
+  - **Target value: 50%**
+  - Cool-down period: 300 seconds
+
+![Creating Auto Scaling](./screenshots/auto-scaling-1.png)
+![Creating Auto Scaling](./screenshots/auto-scaling-2.png)
+![Creating Auto Scaling](./screenshots/auto-scaling-3.png)
+![Creating Auto Scaling](./screenshots/auto-scaling-4.png)
+![Auto Scaling Summary](./screenshots/auto-scaling-summary.png)
 
 ### ✅ 9. Test Auto Scaling
 
-SSH into one of the EC2 instances and run:
+![Two Instances launched by Auto Scaling](./screenshots/instance-launched-by-autoscaling.png)
+
+- Two instances launched in `us-east-1a` and `us-east-1b`
+
+![One Instance Running](./screenshots/one-instance-running.png)
+
+- Minimum of 1 instance running when there’s no load
+
+SSH into Instance:
 
 ```bash
 sudo yum install stress -y
 stress --cpu 2 --timeout 300
 ```
 
-This will simulate CPU load and trigger scaling actions.
+![Stress Test](./screenshots/stress-test.png)
 
 ## 🌍 Access the Web Application
-
-Visit the ALB DNS Name in your browser:
 
 ```bash
 http://<your-alb-dns-name>
 ```
 
+![Web testing](./screenshots/test-webapp-1a.png)
+![Web testing](./screenshots/test-webapp-1b.png)
+
 Each refresh may land on a different AZ!
+
+## 📈 Auto Scaling Activity
+
+Check the EC2 > Auto Scaling Groups > Activity history tab
+
+![Activity history](./screenshots/activity-history-1.png)
+![Activity history](./screenshots/activity-history-2.png)
+![New Instance Launched in us-east-1a](./screenshots/new-instance-launched-again.png)
+
+## 📊 CloudWatch
+
+Check CloudWatch > Alarms and Metrics
+
+![CloudWatch Alarm](./screenshots/cloud-watch-alarm.png)
+
+## 🧹 Cleanup
+
+- Delete ASG, Launch Template, ALB, Target Group, EC2, and VPC
+
+## ✅ Next Improvements
+
+- Add HTTPS via ACM
+- Store logs in S3 or CloudWatch
+- Replace static web with Node.js app
