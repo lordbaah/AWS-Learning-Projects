@@ -86,6 +86,7 @@ The web application is deployed across **multiple Availability Zones (AZs)** in 
 ![Network Interface Setup](./screenshots/launch-template-network.png)
 ![User Data](./screenshots/user-script.png)
 
+-User script used
 [Insert this user Script](user-script.sh)
 
 ### ✅ 6. Create Target Group
