@@ -86,17 +86,7 @@ The web application is deployed across **multiple Availability Zones (AZs)** in 
 ![Network Interface Setup](./screenshots/launch-template-network.png)
 ![User Data](./screenshots/user-script.png)
 
-Example `user-data.sh`:
-
-```bash
-#!/bin/bash
-yum update -y
-yum install -y httpd
-systemctl start httpd
-systemctl enable httpd
-echo "<h1>Hello from $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</h1>" > /var/www/html/index.html
-echo "<h1>Status: OK</h1>" > /var/www/html/health.html
-```
+[Insert this user Script](user-script.sh)
 
 ### ✅ 6. Create Target Group
 
