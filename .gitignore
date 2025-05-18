@@ -1,2 +1,42 @@
 # Add files/folders to ignore in Git
 test.txt
+private_key.pem
+
+# Terraform working directory
+.terraform/
+
+# Terraform state files (may contain AWS secrets like access keys)
+*.tfstate
+*.tfstate.backup
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+
+# Auto-generated crash logs
+crash.log
+
+# Local override configurations (used for local testing only)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# AWS credentials or private keys (NEVER commit)
+*.pem
+*.key
+*.crt
+*.awssecret
+*.awscredentials
+
+# Terraform CLI config files
+.terraformrc
+terraform.rc
+
+# Editor/IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# Misc
+test.txt
