@@ -105,10 +105,11 @@ When your AWS account is in SES sandbox mode (default for new accounts), you can
 4. Select **Lambda** as the use case
 5. Click **Next: Permissions**
 6. Search for the policy you created earlier (`LambdaSESSendEmailPolicy`) and select it
-7. Click **Next: Tags** (optional)
-8. Click **Next: Review**
-9. Name the role (e.g., `ContactFormLambdaRole`) and provide a description
-10. Click **Create role**
+7. Also search for and add the `AWSLambdaBasicExecutionRole` to allow Lambda to write logs
+8. Click **Next: Tags** (optional)
+9. Click **Next: Review**
+10. Name the role (e.g., `ContactFormLambdaRole`) and provide a description
+11. Click **Create role**
 
 ![IAM Role Creation](./screenshots/iam-role-creation-1.png)
 ![IAM Role Creation](./screenshots/iam-role-creation-2.png)
@@ -134,11 +135,11 @@ When your AWS account is in SES sandbox mode (default for new accounts), you can
 ### Add Function Code
 
 1. In the function code editor, create a new file named `index.mjs` (since we're using ES modules)
-2. Paste the following code:
+2. Paste the following updated code:
 
-[link to lambda.js](./backend/lambda-function.mjs)
+link to code
 
-> **Important**: Replace the placeholder emails with your verified sender and recipient emails.
+> **Important**: Replace `YOUR_RECIPIENT_EMAIL` and `YOUR_SENDER_EMAIL` with your verified SES email addresses.
 
 3. Click **Deploy** to save your function
 
@@ -185,7 +186,7 @@ When your AWS account is in SES sandbox mode (default for new accounts), you can
 5. Select **POST** from the dropdown and click the checkmark
 6. Configure the POST method:
    - **Integration type**: Lambda Function
-   - **Lambda Proxy integration**: Check this box
+   - **Lambda Proxy integration**: Check this box (this is critical for proper request handling)
    - **Lambda Function**: Select the region and enter the function name (`ContactFormHandler`)
 7. Click **Save**
 8. When prompted to give API Gateway permission to invoke your Lambda function, click **OK**
@@ -193,6 +194,18 @@ When your AWS account is in SES sandbox mode (default for new accounts), you can
 ![API Resource](./screenshots/creating-api-gateway-resource.png)
 
 ![API Gateway Method](./screenshots/creating-post-method-apigateway.png)
+
+### Set Up CORS (Critical)
+
+1. With the `/contact` resource selected, click **Actions** and select **Enable CORS**
+2. Set the following:
+   - **Access-Control-Allow-Origin**: `*` (or your specific website URL)
+   - **Access-Control-Allow-Headers**: `Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token`
+   - **Access-Control-Allow-Methods**: Leave the default (which should include OPTIONS, POST), you can check them if not selected
+3. Click **Enable CORS and replace existing CORS headers**
+4. Click **Yes, replace existing values** when prompted
+
+![API Gateway CORS](./screenshots/enabling-cors.png)
 
 ### Deploy the API
 
@@ -207,7 +220,7 @@ When your AWS account is in SES sandbox mode (default for new accounts), you can
 ### Test the API Endpoints
 
 Test the Endpoint:
-Use Thunder Client or Postman to send a POST request to the API endpoint:
+Use Thunder Client, Postman, or curl to send a POST request to the API endpoint:
 
 - Endpoint: `POST https://{api-id}.execute-api.us-east-1.amazonaws.com/prod/contact`
 - Headers: `Content-Type: application/json`
@@ -221,7 +234,8 @@ Use Thunder Client or Postman to send a POST request to the API endpoint:
 }
 ```
 
-![API Testing](images/api-testing.png)
+![API Testing](./screenshots/api-testing-1.png)
+![API Testing](./screenshots/api-testing-2.png)
 
 ## Step 5: Host Frontend on S3
 
@@ -236,7 +250,8 @@ Use Thunder Client or Postman to send a POST request to the API endpoint:
    - Keep the rest of the settings as default
    - Click **Create bucket**
 
-![S3 Bucket Creation](images/s3-bucket-creation.png)
+![S3 Bucket Creation](./screenshots/s3-bucket-creation-1.png)
+![S3 Bucket Creation](./screenshots/s3-bucket-creation-2.png)
 
 ### Enable Static Website Hosting
 
@@ -273,27 +288,48 @@ Use Thunder Client or Postman to send a POST request to the API endpoint:
 }
 ```
 
-[link to policy file](#)
-
 5. Click **Save changes**
 
 ![S3 Bucket Policy](./screenshots/editing-bucket-policy.png)
 
+### Configure CORS for S3 Bucket
+
+If your frontend and API are in different domains, you should also configure CORS for your S3 bucket:
+
+1. In your S3 bucket, go to the **Permissions** tab
+2. Scroll down to **Cross-origin resource sharing (CORS)**
+3. Click **Edit**
+4. Paste the following configuration:
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": []
+  }
+]
+```
+
+5. Click **Save changes**
+
 ### Create and Upload Frontend Files
 
-Create the following files locally:
-[link to frontend files](./frontend)
+Create the following file locally:
 
-**index.html**:
-⚠️ **Important**: Replace `YOUR_API_GATEWAY_URL` with the Invoke URL you noted from API Gateway, adding `/contact` at the end.
+**index.html**
+You can use the files provided in this repo
+
+⚠️ **Important**: Replace `YOUR_API_GATEWAY_URL` with the Invoke URL you noted from API Gateway (without `/contact` at the end, as it's already included in the fetch URL).
 
 ### Upload Files to S3
 
 1. In your S3 bucket, click **Upload**
-2. Add the files you created (`index.html`, `style.css`, and optionally `error.html`)
+2. Add the files you created (`index.html`)
 3. Click **Upload**
 
-![S3 File Upload](images/s3-file-upload.png)
+![S3 File Upload](./screenshots/s3-file-upload.png)
 
 ### Get Website URL
 
@@ -301,7 +337,7 @@ Create the following files locally:
 2. Scroll down to **Static website hosting**
 3. Note the **Bucket website endpoint** - this is your contact form's URL
 
-![S3 Website URL](images/s3-website-url.png)
+![S3 Website URL](./screenshots/s3-website-url.png)
 
 ## Step 6: Testing
 
@@ -310,9 +346,57 @@ Create the following files locally:
 3. Submit the form
 4. You should see a success message and receive an email at your verified recipient address
 
-![Form Testing](images/form-testing.png)
+![Form Testing](./screenshots/form-testing-1.png)
+![Form Testing](./screenshots/form-testing-2.png)
+![Form Testing](./screenshots/form-testing-3.png)
 
-## ⚠️ Challenges Encountered & Fixes
+## ⚠️ Troubleshooting Common Issues
+
+### ❌ CORS Errors
+
+**Issue**: "Access has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present..."
+
+**Solution**:
+
+1. Make sure CORS is enabled on your API Gateway resource
+2. Ensure your Lambda function returns the proper CORS headers in all responses
+3. Configure CORS on your S3 bucket if needed
+4. Deploy your API after making CORS changes
+
+### ❌ "Request body is missing" Error
+
+**Issue**: Lambda function cannot access the request body.
+
+**Solution**:
+
+1. Ensure Lambda Proxy Integration is enabled in API Gateway
+2. Check that your Lambda function properly parses `event.body`
+3. Include detailed error logging in your Lambda function for troubleshooting
+
+```javascript
+// Add this to your Lambda to debug request issues
+console.log('Received event:', JSON.stringify(event, null, 2));
+```
+
+### ❌ SES Access Denied Error
+
+**Issue**: If SES throws an "Access Denied" error.
+
+**Solution**:
+
+1. Ensure both sender and recipient email addresses are verified in SES
+2. Check that your Lambda IAM role has permissions to use SES
+3. Verify your SES account is still in sandbox mode (likely) and restricted to verified emails only
+
+### ❌ API Gateway 500 Errors
+
+**Issue**: API Gateway returns 500 error responses.
+
+**Solution**:
+
+1. Check CloudWatch Logs for detailed error messages
+2. Ensure the Lambda function is handling errors properly and returning formatted responses
+3. Test the Lambda function directly in the Lambda console to isolate issues
 
 ### ❌ require is not defined in ES module scope
 
@@ -320,26 +404,12 @@ Create the following files locally:
 
 **Solution**: Use `import` instead of `require` for loading AWS SDK and other dependencies.
 
-### ❌ SES Access Denied Error
-
-**Issue**: If SES throws an "Access Denied" error.
-
-**Solution**: Ensure that the email addresses you're sending from and to are verified in SES. If SES is in sandbox mode, only verified addresses can be used.
-
-### Lambda Execution Errors
-
-If your Lambda function fails to execute:
-
-1. Go to CloudWatch Logs to check the error messages
-2. Common issues include:
-   - Incorrect email addresses (not verified in SES)
-   - IAM permissions issues
-   - Syntax errors in your Lambda code
-
 ## 🔧 Final Notes
 
-- **IAM Role Permissions**: Make sure the IAM role used by Lambda has the proper permissions to send emails via SES.
-- **SES in Sandbox**: If you're in the SES sandbox, you'll need to verify both sender and recipient emails. You can apply for SES production access if you plan to send emails to unverified addresses.
+- **IAM Role Permissions**: Make sure the IAM role used by Lambda has both SES and CloudWatch Logs permissions.
+- **SES in Sandbox**: If you're in the SES sandbox, you'll need to verify both sender and recipient emails.
+- **Logging**: Always implement proper logging in your Lambda function to help with troubleshooting.
+- **Testing**: Use the browser console (F12) to see detailed frontend errors and CloudWatch Logs for backend errors.
 
 ## References
 
@@ -348,3 +418,4 @@ If your Lambda function fails to execute:
 - [Amazon API Gateway Documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html)
 - [Amazon SES Documentation](https://docs.aws.amazon.com/ses/latest/dg/Welcome.html)
 - [AWS IAM Documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html)
+- [Understanding and Solving CORS Issues](https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cors-errors/)

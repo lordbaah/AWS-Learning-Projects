@@ -3,37 +3,46 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 const ses = new SESClient({ region: 'us-east-1' });
 
 export const handler = async (event) => {
-  // Log the incoming event for debugging
+  // Log the incoming event and request context for debugging
   console.log('Received event:', JSON.stringify(event, null, 2));
+  console.log(
+    'Request context:',
+    JSON.stringify(event.requestContext || {}, null, 2)
+  );
 
+  // CORS headers needed for all responses
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers':
       'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
     'Access-Control-Allow-Methods': 'OPTIONS,POST',
+    'Content-Type': 'application/json',
   };
 
-  try {
-    // Handle CORS preflight
-    if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers,
-        body: '',
-      };
-    }
+  // Handle preflight OPTIONS request
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ message: 'CORS preflight successful' }),
+    };
+  }
 
-    // Ensure event.body is present and properly handled
+  try {
+    // Check if event.body exists and handle different integration types
     if (!event.body) {
-      console.log('Missing request body');
+      console.log('Request body is missing');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: 'Request body is missing.' }),
+        body: JSON.stringify({
+          message: 'Request body is missing.',
+          event: JSON.stringify(event),
+        }),
       };
     }
 
-    // Safely parse event.body
+    // Parse the request body
     let body;
     try {
       body =
@@ -46,13 +55,14 @@ export const handler = async (event) => {
         statusCode: 400,
         headers,
         body: JSON.stringify({
-          message: 'Invalid JSON format.',
+          message: 'Invalid JSON format in request body.',
           error: err.message,
+          receivedBody: event.body,
         }),
       };
     }
 
-    // Check that body has expected properties
+    // Check required fields
     const { name, email, message } = body || {};
     if (!name || !email || !message) {
       console.log(
@@ -63,15 +73,16 @@ export const handler = async (event) => {
         statusCode: 400,
         headers,
         body: JSON.stringify({
-          message: 'Name, email, and message are required.',
+          message: 'Name, email, and message are required fields.',
           receivedFields: Object.keys(body || {}),
         }),
       };
     }
 
+    // Send email using SES
     const params = {
       Destination: {
-        ToAddresses: ['lordbaah8@gmail.com'], //replace with receiver email
+        ToAddresses: ['YOUR_RECIPIENT_EMAIL'], // Replace with your verified recipient email
       },
       Message: {
         Body: {
@@ -83,7 +94,7 @@ export const handler = async (event) => {
           Data: 'New Contact Form Submission',
         },
       },
-      Source: 'lord.baah@azubiafrica.org', //replace with sender email
+      Source: 'YOUR_SENDER_EMAIL', // Replace with your verified sender email
     };
 
     const command = new SendEmailCommand(params);
@@ -92,10 +103,13 @@ export const handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: 'Email sent successfully!' }),
+      body: JSON.stringify({
+        message: 'Email sent successfully!',
+        status: 'success',
+      }),
     };
   } catch (error) {
-    console.error('Unhandled error:', error);
+    console.error('Error processing request:', error);
     return {
       statusCode: 500,
       headers,
