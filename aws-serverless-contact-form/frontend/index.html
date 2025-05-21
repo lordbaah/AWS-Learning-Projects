@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <section class="bg-white py-20 shadow">
+      <div class="max-w-4xl mx-auto text-center">
+        <h1 class="text-4xl font-bold">Welcome to Our Company</h1>
+        <p class="mt-4 text-lg text-gray-600">
+          Make inquiries about our services by filling out the form below.
+        </p>
+      </div>
+    </section>
+    <section class="py-10">
+      <div class="max-w-2xl mx-auto bg-white p-8 rounded shadow">
+        <form id="contactForm">
+          <input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Your Name"
+            required
+            class="w-full p-2 mb-4 border rounded"
+          />
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Your Email"
+            required
+            class="w-full p-2 mb-4 border rounded"
+          />
+          <textarea
+            id="message"
+            name="message"
+            placeholder="Your Message"
+            required
+            class="w-full p-2 mb-4 border rounded"
+          ></textarea>
+          <button
+            type="submit"
+            class="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Send
+          </button>
+        </form>
+        <div id="responseMsg" class="mt-4 py-2 px-4 rounded"></div>
+      </div>
+    </section>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('contactForm');
+        const responseMsg = document.getElementById('responseMsg');
+        const YOUR_API_GATEWAY_URL =
+          'https://s7woz7pa04.execute-api.us-east-1.amazonaws.com/prod/contact';
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+
+          // Get form data
+          const name = document.getElementById('name').value;
+          const email = document.getElementById('email').value;
+          const message = document.getElementById('message').value;
+
+          // Show loading message
+          responseMsg.textContent = 'Sending...';
+          responseMsg.className =
+            'mt-4 py-2 px-4 rounded bg-blue-100 text-blue-800';
+
+          try {
+            // Send data to API Gateway
+            const response = await fetch(YOUR_API_GATEWAY_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name,
+                email,
+                message,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              // Success
+              responseMsg.textContent = 'Message sent successfully!';
+              responseMsg.className =
+                'mt-4 py-2 px-4 rounded bg-green-100 text-green-800';
+              form.reset();
+            } else {
+              // API error
+              responseMsg.textContent =
+                data.message || 'Failed to send message.';
+              responseMsg.className =
+                'mt-4 py-2 px-4 rounded bg-red-100 text-red-800';
+              console.error('API Error:', data);
+            }
+          } catch (error) {
+            // Network error
+            responseMsg.textContent =
+              'Failed to send message. Please try again later.';
+            responseMsg.className =
+              'mt-4 py-2 px-4 rounded bg-red-100 text-red-800';
+            console.error('Error:', error);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

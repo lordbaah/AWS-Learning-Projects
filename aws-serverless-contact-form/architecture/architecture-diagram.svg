@@ -1,0 +1,59 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="400" fill="#f8f9fa" />
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold">AWS Serverless Contact Form Architecture</text>
+  
+  <!-- User -->
+  <circle cx="100" cy="200" r="40" fill="#D5DBDB" />
+  <text x="100" y="205" font-family="Arial" font-size="14" text-anchor="middle">User</text>
+  
+  <!-- S3 -->
+  <rect x="220" y="160" width="80" height="80" rx="10" fill="#FF9900" />
+  <text x="260" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="white">S3</text>
+  
+  <!-- API Gateway -->
+  <rect x="380" y="160" width="80" height="80" rx="10" fill="#4D27AA" />
+  <text x="420" y="195" font-family="Arial" font-size="14" text-anchor="middle" fill="white">API</text>
+  <text x="420" y="215" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Gateway</text>
+  
+  <!-- Lambda -->
+  <rect x="540" y="160" width="80" height="80" rx="10" fill="#FF9900" />
+  <text x="580" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Lambda</text>
+  
+  <!-- SES -->
+  <rect x="700" y="160" width="80" height="80" rx="10" fill="#FF9900" />
+  <text x="740" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="white">SES</text>
+  
+  <!-- Arrows -->
+  <!-- User to S3 -->
+  <line x1="140" y1="200" x2="220" y2="200" stroke="#333" stroke-width="2" />
+  <polygon points="215,195 225,200 215,205" fill="#333" />
+  <text x="180" y="185" font-family="Arial" font-size="12" text-anchor="middle">1. Visit</text>
+  
+  <!-- S3 to API Gateway -->
+  <line x1="300" y1="200" x2="380" y2="200" stroke="#333" stroke-width="2" />
+  <polygon points="375,195 385,200 375,205" fill="#333" />
+  <text x="340" y="185" font-family="Arial" font-size="12" text-anchor="middle">2. Submit</text>
+  
+  <!-- API Gateway to Lambda -->
+  <line x1="460" y1="200" x2="540" y2="200" stroke="#333" stroke-width="2" />
+  <polygon points="535,195 545,200 535,205" fill="#333" />
+  <text x="500" y="185" font-family="Arial" font-size="12" text-anchor="middle">3. Invoke</text>
+  
+  <!-- Lambda to SES -->
+  <line x1="620" y1="200" x2="700" y2="200" stroke="#333" stroke-width="2" />
+  <polygon points="695,195 705,200 695,205" fill="#333" />
+  <text x="660" y="185" font-family="Arial" font-size="12" text-anchor="middle">4. Send</text>
+  
+  <!-- Legend -->
+  <rect x="270" y="320" width="260" height="60" rx="5" fill="white" stroke="#ddd" />
+  <circle cx="290" cy="335" r="8" fill="#FF9900" />
+  <text x="310" y="340" font-family="Arial" font-size="14">AWS Services</text>
+  <circle cx="290" cy="365" r="8" fill="#D5DBDB" />
+  <text x="310" y="370" font-family="Arial" font-size="14">External Entity</text>
+  <line x1="420" y1="335" x2="450" y2="335" stroke="#333" stroke-width="2" />
+  <polygon points="445,330 455,335 445,340" fill="#333" />
+  <text x="480" y="340" font-family="Arial" font-size="14">Data Flow</text>
+</svg>

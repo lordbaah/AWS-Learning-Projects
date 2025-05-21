@@ -112,14 +112,7 @@ resource "aws_instance" "web" {
   associate_public_ip_address = true
   key_name                    = aws_key_pair.generated.key_name
 
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install -y nginx1
-              systemctl start nginx
-              systemctl enable nginx
-              echo "<h1>Welcome to My Nginx Server deployed via Terraform</h1>" > /usr/share/nginx/html/index.html
-              EOF
+  user_data = file("${path.module}/nginx-setup.sh")
 
   tags = {
     Name = var.instance_name

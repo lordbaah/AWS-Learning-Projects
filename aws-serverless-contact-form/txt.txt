@@ -1,0 +1,59 @@
+# AWS Serverless Contact Form
+
+A complete guide to building and deploying a serverless contact form using AWS services (S3, Lambda, API Gateway, and SES).
+
+![AWS Serverless Contact Form Architecture](images/architecture-diagram.png)
+
+## 📋 Table of Contents
+
+- [Introduction](#introduction)
+- [Prerequisites](#prerequisites)
+- [Architecture Overview](#architecture-overview)
+- [Step 1: Set Up Amazon SES](#step-1-set-up-amazon-ses)
+- [Step 2: Create IAM Policies and Roles](#step-2-create-iam-policies-and-roles)
+- [Step 3: Create Lambda Function](#step-3-create-lambda-function)
+- [Step 4: Set Up API Gateway](#step-4-set-up-api-gateway)
+- [Step 5: Host Frontend on S3](#step-5-host-frontend-on-s3)
+- [Step 6: Testing](#step-6-testing)
+- [Troubleshooting](#troubleshooting)
+- [Repository Structure](#repository-structure)
+- [References](#references)
+
+## Introduction
+
+This project demonstrates how to build a serverless contact form solution using AWS services. The contact form is hosted on Amazon S3 as a static website, and when a user submits the form, it triggers an API Gateway endpoint, which invokes a Lambda function to send an email via Amazon SES.
+
+This solution is:
+- **Cost-effective**: You only pay for what you use
+- **Scalable**: Can handle varying loads automatically
+- **Secure**: Uses AWS IAM for permissions
+- **Maintenance-free**: No servers to manage
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- An AWS account
+- AWS Management Console access
+- Basic knowledge of HTML, CSS, and JavaScript
+- Basic understanding of AWS services
+- AWS CLI installed (optional but recommended)
+
+## Architecture Overview
+
+Here's how the components work together:
+
+1. User visits the contact form hosted on **Amazon S3**
+2. User fills out and submits the form
+3. Form submission sends a request to **API Gateway**
+4. API Gateway triggers the **Lambda function**
+5. Lambda function uses **Amazon SES** to send an email with the form data
+6. Response is returned to the user
+
+## References
+
+- [Amazon S3 Static Website Hosting Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html)
+- [AWS Lambda Documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+- [Amazon API Gateway Documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html)
+- [Amazon SES Documentation](https://docs.aws.amazon.com/ses/latest/dg/Welcome.html)
+- [AWS IAM Documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html)
