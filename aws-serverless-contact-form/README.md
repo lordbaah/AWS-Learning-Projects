@@ -2,7 +2,7 @@
 
 A complete guide to building and deploying a serverless contact form using AWS services (S3, Lambda, API Gateway, and SES).
 
-![Architecture Diagram](images/architecture-diagram.png)
+![Architecture Diagram](./architecture/architecture-diagram.svg)
 
 ## 📋 Table of Contents
 
@@ -30,16 +30,6 @@ This solution is:
 - **Secure**: Uses AWS IAM for permissions
 - **Maintenance-free**: No servers to manage
 
-## Prerequisites
-
-Before you begin, make sure you have:
-
-- An AWS account
-- AWS Management Console access
-- Basic knowledge of HTML, CSS, and JavaScript
-- Basic understanding of AWS services
-- AWS CLI installed (optional but recommended)
-
 ## Architecture Overview
 
 Here's how the components work together:
@@ -51,7 +41,7 @@ Here's how the components work together:
 5. Lambda function uses Amazon SES to send an email with the form data
 6. Response is returned to the user
 
-![Detailed Architecture](/architecture/architecture-diagram.svg)
+![Detailed Architecture](./architecture/architecture-diagram.svg)
 
 ## Step 1: Set Up Amazon SES
 
