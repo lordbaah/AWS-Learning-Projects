@@ -96,7 +96,7 @@ _Confirmed NGINX is serving the default page on the public IP._
 
 _Terraform script used to define infrastructure._
 
-![Terraform Code](./screenshots/terraform_code.png)
+![Terraform Code](./main.tf)
 
 ---
 
