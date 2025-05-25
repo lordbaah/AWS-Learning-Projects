@@ -338,354 +338,360 @@ export const handler = async (event) => {
    - **Method**: GET, **Resource path**: `/images`
 4. **Deploy** and note the invoke URL
 
-### Step 9: Create Frontend Application
+### Step 9: Create S3 Bucket for Frontend Hosting
 
-Create an `index.html` file:
+1. **Create Frontend Bucket**:
 
-```html
+   - Go to S3 Console → **Create bucket**
+   - **Bucket name**: `photo-uploader-frontend-[your-name]`
+   - **Region**: Same as your main bucket
+   - **Uncheck** "Block all public access"
+   - Click **Create bucket**
+
+2. **Enable Static Website Hosting**:
+
+   - Go to bucket **Properties** tab
+   - Scroll to **Static website hosting** → **Edit**
+   - **Enable** static website hosting
+   - **Index document**: `index.html`
+   - **Error document**: `error.html`
+   - **Save changes**
+
+3. **Add Bucket Policy for Public Access**:
+   - Go to **Permissions** tab → **Bucket policy** → **Edit**
+   - Add this policy (replace bucket name):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::photo-uploader-frontend-[your-name]/*"
+    }
+  ]
+}
+```
+
+### Step 10: Generate Project Structure
+
+Use the provided shell script to create all necessary files and folders.
+
+### Step 11: Frontend Application Files
+
+The shell script will generate these files with the complete application code.
+
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photo Uploader</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f5f5f5;
-      }
-      .container {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      .upload-area {
-        border: 2px dashed #ccc;
-        border-radius: 10px;
-        padding: 40px;
-        text-align: center;
-        margin: 20px 0;
-        transition: border-color 0.3s;
-      }
-      .upload-area:hover {
-        border-color: #007bff;
-      }
-      .upload-btn {
-        background: #007bff;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      .upload-btn:hover {
-        background: #0056b3;
-      }
-      .progress {
-        width: 100%;
-        height: 20px;
-        background: #f0f0f0;
-        border-radius: 10px;
-        overflow: hidden;
-        margin: 10px 0;
-        display: none;
-      }
-      .progress-bar {
-        height: 100%;
-        background: #007bff;
-        width: 0%;
-        transition: width 0.3s;
-      }
-      .status {
-        margin: 10px 0;
-        padding: 10px;
-        border-radius: 5px;
-      }
-      .success {
-        background: #d4edda;
-        color: #155724;
-      }
-      .error {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      .gallery {
-        margin-top: 30px;
-      }
-
-      .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-      }
-
-      .image-card {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        transition: transform 0.2s;
-      }
-
-      .image-card:hover {
-        transform: translateY(-2px);
-      }
-
-      .image-card img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-      }
-
-      .image-info {
-        padding: 15px;
-      }
-
-      .image-name {
-        font-weight: bold;
-        margin-bottom: 5px;
-        word-break: break-word;
-      }
-
-      .image-meta {
-        font-size: 12px;
-        color: #666;
-        margin: 3px 0;
-      }
-
-      .refresh-btn {
-        background: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-left: 10px;
-      }
-
-      .refresh-btn:hover {
-        background: #218838;
-      }
-
-      .loading {
-        text-align: center;
-        padding: 20px;
-        color: #666;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .upload-btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .upload-btn:hover {
+            background: #0056b3;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        
+        .gallery {
+            margin-top: 30px;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .image-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .image-info {
+            padding: 15px;
+        }
+        
+        .image-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+        
+        .image-meta {
+            font-size: 12px;
+            color: #666;
+            margin: 3px 0;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .refresh-btn:hover {
+            background: #218838;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="container">
-      <h1>📸 Photo Uploader</h1>
-      <p>Upload your photos to AWS S3 with automatic metadata storage</p>
-
-      <div class="upload-area" id="uploadArea">
-        <p>Drag and drop images here or click to select</p>
-        <input
-          type="file"
-          id="fileInput"
-          accept="image/*"
-          multiple
-          style="display: none;"
-        />
-        <button
-          class="upload-btn"
-          onclick="document.getElementById('fileInput').click()"
-        >
-          Choose Images
-        </button>
-      </div>
-
-      <div class="progress" id="progressContainer">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-
-      <div id="status"></div>
-
-      <div id="uploadedImages"></div>
-
-      <div class="gallery">
-        <h2>📷 Your Photo Gallery</h2>
-        <button class="refresh-btn" onclick="loadGallery()">
-          🔄 Refresh Gallery
-        </button>
-        <div id="galleryContainer">
-          <div class="loading">Loading your photos...</div>
+        <h1>📸 Photo Uploader</h1>
+        <p>Upload your photos to AWS S3 with automatic metadata storage</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>Drag and drop images here or click to select</p>
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Choose Images
+            </button>
         </div>
-      </div>
+        
+        <div class="progress" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div id="uploadedImages"></div>
+        
+        <div class="gallery">
+            <h2>📷 Your Photo Gallery</h2>
+            <button class="refresh-btn" onclick="loadGallery()">🔄 Refresh Gallery</button>
+            <div id="galleryContainer">
+                <div class="loading">Loading your photos...</div>
+            </div>
+        </div>
     </div>
 
     <script>
-      // Replace with your API Gateway URL
-      const API_ENDPOINT =
-        'https://your-api-id.execute-api.us-east-1.amazonaws.com/upload-url';
+        // Replace with your API Gateway URL
+        const API_ENDPOINT = 'https://your-api-id.execute-api.us-east-1.amazonaws.com/upload-url';
 
-      const fileInput = document.getElementById('fileInput');
-      const uploadArea = document.getElementById('uploadArea');
-      const progressContainer = document.getElementById('progressContainer');
-      const progressBar = document.getElementById('progressBar');
-      const status = document.getElementById('status');
-      const uploadedImages = document.getElementById('uploadedImages');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const uploadedImages = document.getElementById('uploadedImages');
 
-      // Drag and drop functionality
-      uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = '#007bff';
-      });
-
-      uploadArea.addEventListener('dragleave', () => {
-        uploadArea.style.borderColor = '#ccc';
-      });
-
-      uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = '#ccc';
-        const files = Array.from(e.dataTransfer.files).filter((file) =>
-          file.type.startsWith('image/')
-        );
-        if (files.length > 0) {
-          uploadFiles(files);
-        }
-      });
-
-      fileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
-          uploadFiles(files);
-        }
-      });
-
-      async function uploadFiles(files) {
-        showStatus('Preparing uploads...', 'info');
-        progressContainer.style.display = 'block';
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const progress = ((i + 1) / files.length) * 100;
-
-          try {
-            await uploadFile(file);
-            progressBar.style.width = progress + '%';
-            showStatus(`Uploaded ${i + 1}/${files.length} files`, 'success');
-          } catch (error) {
-            showStatus(
-              `Error uploading ${file.name}: ${error.message}`,
-              'error'
-            );
-            console.error('Upload error:', error);
-          }
-        }
-
-        showStatus(`Successfully uploaded ${files.length} file(s)!`, 'success');
-
-        // Refresh gallery after upload
-        setTimeout(() => {
-          loadGallery();
-          progressContainer.style.display = 'none';
-          progressBar.style.width = '0%';
-        }, 2000);
-      }
-
-      async function uploadFile(file) {
-        // Get presigned URL
-        const response = await fetch(
-          `${API_ENDPOINT}/upload-url?filename=${encodeURIComponent(
-            file.name
-          )}&contentType=${encodeURIComponent(file.type)}`
-        );
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to get upload URL');
-        }
-
-        // Upload file to S3
-        const uploadResponse = await fetch(data.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
         });
 
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload file to S3');
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        });
+
+        async function uploadFiles(files) {
+            showStatus('Preparing uploads...', 'info');
+            progressContainer.style.display = 'block';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const progress = ((i + 1) / files.length) * 100;
+
+                try {
+                    await uploadFile(file);
+                    progressBar.style.width = progress + '%';
+                    showStatus(`Uploaded ${i + 1}/${files.length} files`, 'success');
+                } catch (error) {
+                    showStatus(`Error uploading ${file.name}: ${error.message}`, 'error');
+                    console.error('Upload error:', error);
+                }
+            }
+
+            showStatus(`Successfully uploaded ${files.length} file(s)!`, 'success');
+
+            // Refresh gallery after upload
+            setTimeout(() => {
+                loadGallery();
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 2000);
         }
 
-        // Add to uploaded images display
-        addUploadedImage(file.name, data.key);
-      }
+        async function uploadFile(file) {
+            // Get presigned URL
+            const response = await fetch(`${API_ENDPOINT}/upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`);
+            const data = await response.json();
 
-      function addUploadedImage(filename, key) {
-        const imageDiv = document.createElement('div');
-        imageDiv.style.cssText =
-          'margin: 10px 0; padding: 10px; background: #e9ecef; border-radius: 5px;';
-        imageDiv.innerHTML = `
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to get upload URL');
+            }
+
+            // Upload file to S3
+            const uploadResponse = await fetch(data.uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Failed to upload file to S3');
+            }
+
+            // Add to uploaded images display
+            addUploadedImage(file.name, data.key);
+        }
+
+        function addUploadedImage(filename, key) {
+            const imageDiv = document.createElement('div');
+            imageDiv.style.cssText = 'margin: 10px 0; padding: 10px; background: #e9ecef; border-radius: 5px;';
+            imageDiv.innerHTML = `
                 <strong>📁 ${filename}</strong><br>
                 <small>S3 Key: ${key}</small><br>
                 <small>Uploaded: ${new Date().toLocaleString()}</small>
             `;
-        uploadedImages.appendChild(imageDiv);
-      }
-
-      function showStatus(message, type) {
-        status.innerHTML = `<div class="status ${type}">${message}</div>`;
-      }
-
-      // Gallery functions
-      async function loadGallery() {
-        try {
-          galleryContainer.innerHTML =
-            '<div class="loading">Loading your photos...</div>';
-
-          const response = await fetch(
-            `${API_ENDPOINT}/images?generateUrls=true&limit=50`
-          );
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Failed to load images');
-          }
-
-          displayGallery(data.photos);
-        } catch (error) {
-          console.error('Error loading gallery:', error);
-          galleryContainer.innerHTML = `<div class="status error">Failed to load gallery: ${error.message}</div>`;
-        }
-      }
-
-      function displayGallery(photos) {
-        if (!photos || photos.length === 0) {
-          galleryContainer.innerHTML =
-            '<div class="status">No photos uploaded yet. Upload some images to see them here!</div>';
-          return;
+            uploadedImages.appendChild(imageDiv);
         }
 
-        const galleryGrid = document.createElement('div');
-        galleryGrid.className = 'gallery-grid';
+        function showStatus(message, type) {
+            status.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
 
-        photos.forEach((photo) => {
-          const imageCard = document.createElement('div');
-          imageCard.className = 'image-card';
+        // Gallery functions
+        async function loadGallery() {
+            try {
+                galleryContainer.innerHTML = '<div class="loading">Loading your photos...</div>';
 
-          const fileName = photo.photo_name.split('/').pop(); // Remove path prefix
-          const fileSize = formatFileSize(photo.file_size);
-          const uploadDate = new Date(photo.upload_time).toLocaleDateString();
-          const uploadTime = new Date(photo.upload_time).toLocaleTimeString();
+                const response = await fetch(`${API_ENDPOINT}/images?generateUrls=true&limit=50`);
+                const data = await response.json();
 
-          imageCard.innerHTML = `
-                    ${
-                      photo.viewUrl
-                        ? `<img src="${photo.viewUrl}" alt="${fileName}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'" />`
-                        : '<div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">No Preview Available</div>'
-                    }
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load images');
+                }
+
+                displayGallery(data.photos);
+
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                galleryContainer.innerHTML = `<div class="status error">Failed to load gallery: ${error.message}</div>`;
+            }
+        }
+
+        function displayGallery(photos) {
+            if (!photos || photos.length === 0) {
+                galleryContainer.innerHTML = '<div class="status">No photos uploaded yet. Upload some images to see them here!</div>';
+                return;
+            }
+
+            const galleryGrid = document.createElement('div');
+            galleryGrid.className = 'gallery-grid';
+
+            photos.forEach(photo => {
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+
+                const fileName = photo.photo_name.split('/').pop(); // Remove path prefix
+                const fileSize = formatFileSize(photo.file_size);
+                const uploadDate = new Date(photo.upload_time).toLocaleDateString();
+                const uploadTime = new Date(photo.upload_time).toLocaleTimeString();
+
+                imageCard.innerHTML = `
+                    ${photo.viewUrl ? `<img src="${photo.viewUrl}" alt="${fileName}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'" />` : '<div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">No Preview Available</div>'}
                     <div class="image-info">
                         <div class="image-name">📸 ${fileName}</div>
                         <div class="image-meta">📏 Size: ${fileSize}</div>
@@ -694,25 +700,26 @@ Create an `index.html` file:
                     </div>
                 `;
 
-          galleryGrid.appendChild(imageCard);
-        });
+                galleryGrid.appendChild(imageCard);
+            });
 
-        galleryContainer.innerHTML = '';
-        galleryContainer.appendChild(galleryGrid);
-      }
+            galleryContainer.innerHTML = '';
+            galleryContainer.appendChild(galleryGrid);
+        }
 
-      function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
-      // Load gallery when page loads
-      window.addEventListener('load', loadGallery);
+        // Load gallery when page loads
+        window.addEventListener('load', loadGallery);
     </script>
-  </body>
+
+</body>
 </html>
 ```
 
