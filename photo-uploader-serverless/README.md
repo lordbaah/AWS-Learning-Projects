@@ -1,229 +1,269 @@
-# Photo Uploader with S3 + Lambda + DynamoDB
+# Photo Uploader with S3 + Lambda + DynamoDB + CloudFront
 
-A serverless photo uploader application using AWS services with Node.js ES modules.
+A serverless photo uploader application using AWS services with CloudFront distribution for frontend hosting and API endpoints for testing.
 
 ## 🎯 Objective
 
-Build a simple serverless photo uploader that:
+Build a serverless photo uploader that:
 
-- Allows users to upload images to an S3 bucket
+- Allows users to upload images to an S3 bucket via API
 - Triggers a Lambda function when a new image is uploaded
 - Stores metadata (image name, size, upload time) in DynamoDB
+- Hosts frontend via CloudFront distribution
+- Provides REST APIs for testing with Postman/Thunder Client
 
 ## 🏗️ Architecture
 
 ```
-[User] --(Upload Photo)--> [S3 Bucket] --> [Lambda Function] --> [DynamoDB Table]
+[CloudFront] --> [S3 Frontend Bucket]
+[API Gateway] --> [Lambda Functions] --> [S3 Images Bucket] --> [DynamoDB]
 ```
 
 ## 🛠️ Services Used
 
-- **Amazon S3** - Stores uploaded image files
-- **AWS Lambda** - Processes uploads and stores metadata
-- **Amazon DynamoDB** - Stores image metadata
-- **API Gateway** - Provides upload endpoints (optional)
+- **Amazon CloudFront** - CDN for frontend hosting
+- **Amazon S3** - Frontend hosting and image storage
+- **AWS Lambda** - Processing uploads and metadata
+- **Amazon DynamoDB** - Image metadata storage
+- **API Gateway** - REST API endpoints for testing
 
 ## 📋 Prerequisites
 
 - AWS Account with appropriate permissions
-- AWS CLI configured (optional)
+- AWS CLI configured
 - Node.js 18.x or later
-- Basic knowledge of JavaScript ES modules
+- Postman or Thunder Client for API testing
 
 ## 🚀 Step-by-Step Setup
 
-### Step 1: Create S3 Bucket
+### Step 1: Create S3 Buckets
+
+#### Main Images Bucket
 
 1. Go to **AWS S3 Console**
 2. Click **Create bucket**
-   - **Bucket name**: `photo-uploader-demo-[your-name]`
-   - **Region**: `us-east-1` (recommended)
-   - **Block Public Access**: Uncheck if you want public image viewing
+   - **Bucket name**: `photo-uploader-images-[your-name]`
+   - **Region**: `us-east-1`
+   - **Block Public Access**: Keep enabled (we'll use presigned URLs)
 3. Click **Create bucket**
+
+#### Frontend Hosting Bucket
+
+1. **Create Frontend Bucket**:
+   - **Bucket name**: `photo-uploader-frontend-[your-name]`
+   - **Region**: `us-east-1`
+   - **Block Public Access**: Uncheck all options
+2. Click **Create bucket**
+
+3. **Add Bucket Policy for CloudFront**:
+   - Go to **Permissions** tab → **Bucket policy**
+   - Add CloudFront service principal policy (will be provided by CloudFront OAC setup)
 
 ### Step 2: Create DynamoDB Table
 
 1. Go to **DynamoDB Console**
 2. Click **Create table**
    - **Table name**: `PhotoMetadata`
-   - **Partition key**: `photo_name` (String)
-   - Leave other settings as default
+   - **Partition key**: `photo_id` (String)
+   - **Sort key**: `upload_timestamp` (Number)
 3. Click **Create table**
 
 ### Step 3: Create IAM Role for Lambda
 
 1. Go to **IAM Console** → **Roles** → **Create role**
 2. Select **AWS service** → **Lambda**
-3. Attach the following policies:
-   - `AmazonS3ReadOnlyAccess`
-   - `AmazonDynamoDBFullAccess`
-   - `AWSLambdaBasicExecutionRole`
-4. **Role name**: `LambdaS3DynamoDBRole`
+3. Create custom policy with the following permissions:
+   - S3 full access to images bucket
+   - DynamoDB full access to PhotoMetadata table
+   - CloudWatch Logs permissions
+4. **Role name**: `PhotoUploaderLambdaRole`
 5. Click **Create role**
 
-### Step 4: Create Lambda Function for Metadata Storage
+### Step 4: Create Lambda Functions
 
-1. Go to **Lambda Console** → **Create function**
-
-   - **Function name**: `storePhotoMetadata`
-   - **Runtime**: Node.js 18.x
-   - **Execution role**: Use existing role → `LambdaS3DynamoDBRole`
-
-2. Replace the default code with:
-
-[View Lambda Function Code](./lambda/store_metadata.js)
-
-3. Click **Deploy**
-
-### Step 5: Configure S3 Event Notification
-
-1. Go to your S3 bucket → **Properties** tab
-2. Scroll to **Event notifications** → **Create event notification**
-   - **Event name**: `TriggerMetadataFunction`
-   - **Event types**: Select `All object create events`
-   - **Prefix**: `uploads/` (optional - organizes uploads)
-   - **Suffix**: `.jpg,.png,.jpeg` (filter for image files)
-   - **Destination**: Lambda function → Select `storePhotoMetadata`
-3. **Save changes**
-
-### Step 6: Create Presigned URL Generator
-
-For secure uploads, create another Lambda function:
+#### Function 1: Generate Upload URL
 
 1. **Lambda Console** → **Create function**
 
    - **Function name**: `generateUploadURL`
    - **Runtime**: Node.js 18.x
-   - **Execution role**: `LambdaS3DynamoDBRole`
+   - **Execution role**: `PhotoUploaderLambdaRole`
 
-2. Add S3 write permissions to the role:
-   - Go to IAM → Roles → `LambdaS3DynamoDBRole`
-   - Add inline policy:
+2. **Function code**: [View Lambda Function Code](./lambda/generate_upload_url.js)
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["s3:PutObject", "s3:PutObjectAcl"],
-      "Resource": "arn:aws:s3:::photo-uploader-demo-[your-name]/*"
-    }
-  ]
-}
-```
+#### Function 2: Store Photo Metadata (S3 Trigger)
 
-3. Lambda function code:
+1. **Lambda Console** → **Create function**
 
-[View Lambda Function Code](./lambda/generate_upload_url.js)
+   - **Function name**: `storePhotoMetadata`
+   - **Runtime**: Node.js Latest version
+   - **Execution role**: `PhotoUploaderLambdaRole`
 
-### Step 7: Create Image Fetching Lambda Function
+2. **Function code**: [View Lambda Function Code](./lambda/store_metadata.js)
 
-Create a Lambda function to fetch and list uploaded images:
+#### Function 3: Fetch Images
 
 1. **Lambda Console** → **Create function**
 
    - **Function name**: `fetchUserImages`
    - **Runtime**: Node.js 18.x
-   - **Execution role**: `LambdaS3DynamoDBRole`
+   - **Execution role**: `PhotoUploaderLambdaRole`
 
-2. Lambda function code:
+2. **Function code**: [View Lambda Function Code](./lambda/fetch_images.js)
 
-   [View Lambda Function Code](./lambda/fetch_images.js)
+### Step 5: Configure S3 Event Notification
 
-### Step 8: Create API Gateway
+1. Go to your images S3 bucket → **Properties** tab
+2. Scroll to **Event notifications** → **Create event notification**
+   - **Event name**: `TriggerMetadataFunction`
+   - **Event types**: `All object create events`
+   - **Prefix**: `uploads/`
+   - **Destination**: Lambda function → `storePhotoMetadata`
+3. **Save changes**
+
+### Step 6: Create API Gateway
 
 1. Go to **API Gateway Console** → **Create API** → **HTTP API**
 2. **Add integrations**:
-   - **Integration 1**: Lambda function → `generateUploadURL`
-   - **Integration 2**: Lambda function → `fetchUserImages`
+
+   - Add Lambda integration for `generateUploadURL`
+   - Add Lambda integration for `fetchUserImages`
+
 3. **Configure routes**:
-   - **Method**: GET, **Resource path**: `/upload-url`
-   - **Method**: GET, **Resource path**: `/images`
-4. **Deploy** and note the invoke URL
 
-### Step 9: Create S3 Bucket for Frontend Hosting
+   - **GET** `/upload-url` → `generateUploadURL`
+   - **GET** `/images` → `fetchUserImages`
 
-1. **Create Frontend Bucket**:
+4. **Configure CORS**:
 
-   - Go to S3 Console → **Create bucket**
-   - **Bucket name**: `photo-uploader-frontend-[your-name]`
-   - **Region**: Same as your main bucket
-   - **Uncheck** "Block all public access"
-   - Click **Create bucket**
+   - **Access-Control-Allow-Origin**: `*`
+   - **Access-Control-Allow-Headers**: `Content-Type, Authorization`
+   - **Access-Control-Allow-Methods**: `GET, POST, OPTIONS`
 
-2. **Enable Static Website Hosting**:
+5. **Deploy** and note the invoke URL (e.g., `https://abc123.execute-api.us-east-1.amazonaws.com`)
 
-   - Go to bucket **Properties** tab
-   - Scroll to **Static website hosting** → **Edit**
-   - **Enable** static website hosting
-   - **Index document**: `index.html`
-   - **Error document**: `error.html`
-   - **Save changes**
+### Step 7: Create Frontend Files
 
-3. **Add Bucket Policy for Public Access**:
-   - Go to **Permissions** tab → **Bucket policy** → **Edit**
-   - Add this policy (replace bucket name):
+#### Frontend Application
+
+- **Frontend code**: [View Frontend Code](./frontend/)
+- Update the `API_ENDPOINT` variable with your API Gateway URL
+- Upload the HTML file to your frontend S3 bucket
+
+### Step 8: Create CloudFront Distribution
+
+1. **Upload Frontend to S3**:
+
+   - Upload `index.html` to your frontend S3 bucket
+
+2. **Create CloudFront Distribution**:
+
+   - Go to **CloudFront Console** → **Create distribution**
+   - **Origin Domain**: Select your frontend S3 bucket
+   - **Origin Access**: Origin access control settings (recommended)
+   - **Default Root Object**: `index.html`
+   - **Price Class**: Use all edge locations
+   - Click **Create distribution**
+
+3. **Update Bucket Policy** (if using OAC):
+
+   - CloudFront will provide the bucket policy
+   - Replace the existing policy in your frontend S3 bucket
+
+4. **Note the CloudFront URL** (e.g., `https://d123456789.cloudfront.net`)
+
+### Step 9: Update Frontend Configuration
+
+Update the `API_ENDPOINT` in your `index.html`:
+
+```javascript
+const API_ENDPOINT = 'https://your-api-id.execute-api.us-east-1.amazonaws.com';
+```
+
+Re-upload the updated `index.html` to S3 and invalidate CloudFront cache.
+
+## 🧪 API Testing with Postman/Thunder Client
+
+### 1. Get Upload URL
+
+**Request:**
+
+```
+GET https://your-api-id.execute-api.us-east-1.amazonaws.com/upload-url?filename=test-image.jpg&contentType=image/jpeg
+```
+
+**Expected Response:**
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::photo-uploader-frontend-[your-name]/*"
-    }
-  ]
+  "uploadUrl": "https://s3.amazonaws.com/...",
+  "filename": "uploads/1703123456789-test-image.jpg",
+  "expiresIn": 300
 }
 ```
 
-### Step 10: Frontend Application Files
+### 2. Upload Image to S3
 
-The Frontend code is located in this folder[Go to Frontend Folder](./frontend/)
+**Request:**
 
-## 🧪 Testing Your Application
+```
+PUT [uploadUrl from previous response]
+Content-Type: image/jpeg
+Body: [Raw binary image data]
+```
 
-### Manual Testing via AWS Console
+### 3. Get Images List
 
-1. **Upload Test Image**:
+**Request:**
 
-   - Go to S3 Console → Your bucket
-   - Upload a `.jpg` or `.png` file to the `uploads/` folder
+```
+GET https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrls=true&limit=10
+```
 
-2. **Verify Lambda Execution**:
+**Expected Response:**
 
-   - Go to Lambda Console → `storePhotoMetadata` → Monitor tab
-   - Check recent invocations
+```json
+{
+  "images": [
+    {
+      "photo_id": "uploads/1703123456789-test-image.jpg",
+      "upload_timestamp": 1703123456789,
+      "bucket_name": "photo-uploader-images-yourname",
+      "file_size": 245760,
+      "content_type": "image/jpeg",
+      "upload_date": "2023-12-21T10:30:56.789Z",
+      "viewUrl": "https://s3.amazonaws.com/..."
+    }
+  ],
+  "count": 1,
+  "timestamp": "2023-12-21T10:35:00.000Z"
+}
+```
 
-3. **Check DynamoDB**:
+## 📊 Testing Checklist
 
-   - Go to DynamoDB Console → `PhotoMetadata` table
-   - Explore table items to see stored metadata
+### Backend API Testing
 
-4. **Test Image Fetching**:
-   - Go to Lambda Console → `fetchUserImages` → Test tab
-   - Create a test event and verify it returns photo metadata
+- [ ] **Upload URL Generation**: Test GET `/upload-url` with filename parameter
+- [ ] **S3 Upload**: Use presigned URL to upload image file
+- [ ] **Metadata Storage**: Verify Lambda function triggers and stores metadata
+- [ ] **Image Fetching**: Test GET `/images` endpoint
+- [ ] **CORS Headers**: Verify all endpoints return proper CORS headers
 
 ### Frontend Testing
 
-1. Update the `API_ENDPOINT` in `index.html` with your API Gateway URL (without `/upload-url` suffix)
-2. Open `index.html` in a web browser
-3. Upload images using drag-and-drop or file selection
-4. View uploaded images in the gallery section
-5. Verify uploads in S3 and metadata in DynamoDB
+- [ ] **CloudFront Access**: Verify frontend loads via CloudFront URL
+- [ ] **File Upload**: Test drag-and-drop functionality
+- [ ] **Gallery Loading**: Verify images display in gallery
+- [ ] **Error Handling**: Test error scenarios
+- [ ] **Responsive Design**: Test on different screen sizes
 
-### API Testing with curl
+### AWS Services Verification
 
-```bash
-# Test upload URL generation
-curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/upload-url?filename=test.jpg"
-
-# Test image fetching
-curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrls=true&limit=10"
-```
+- [ ] **S3 Images Bucket**: Verify uploaded files appear in `uploads/` folder
+- [ ] **DynamoDB**: Check `PhotoMetadata` table for metadata records
+- [ ] **Lambda Logs**: Monitor CloudWatch logs for all functions
+- [ ] **API Gateway**: Test endpoints directly in AWS console
 
 ## 📊 Monitoring and Debugging
 
@@ -231,6 +271,7 @@ curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrl
 
 - **Lambda Logs**: Monitor function execution and errors
 - **API Gateway Logs**: Track API requests and responses
+- **CloudFront Logs**: Monitor CDN performance and access patterns
 
 ### Common Issues and Solutions
 
@@ -239,22 +280,31 @@ curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrl
 3. **S3 Event Not Triggering**: Check event notification configuration
 4. **DynamoDB Errors**: Verify table name and key structure
 5. **Images Not Loading**: Check S3 bucket permissions and presigned URL generation
-6. **Gallery Not Refreshing**: Verify the `/images` API endpoint is working
+6. **CloudFront Cache**: Remember to invalidate cache after frontend updates
+7. **Gallery Not Refreshing**: Verify the `/images` API endpoint is working
 
 ## 🎯 Deliverables Checklist
 
-- [ ] S3 bucket created and configured
+- [ ] S3 buckets created and configured (images + frontend)
 - [ ] DynamoDB table with proper schema
-- [ ] Lambda function processing S3 events
+- [ ] Lambda functions processing uploads and API requests
 - [ ] IAM roles with appropriate permissions
 - [ ] S3 event notifications configured
-- [ ] Upload at least 3 test photos
-- [ ] Verify metadata in DynamoDB
-- [ ] Test image viewing in gallery
+- [ ] API Gateway with proper CORS configuration
+- [ ] CloudFront distribution for frontend hosting
+- [ ] Upload at least 3 test photos via API
+- [ ] Verify metadata storage in DynamoDB
+- [ ] Test image viewing via frontend
 - [ ] Verify presigned URLs work correctly
-- [ ] Frontend application working
-- [ ] Architecture diagram
-- [ ] Demo of upload and viewing process
+- [ ] Frontend application accessible via CloudFront
+- [ ] Complete API testing with Postman/Thunder Client
+
+## 🔗 Important URLs to Note
+
+- **CloudFront Distribution URL**: `https://d123456789.cloudfront.net`
+- **API Gateway Base URL**: `https://your-api-id.execute-api.us-east-1.amazonaws.com`
+- **S3 Frontend Bucket**: `photo-uploader-frontend-[your-name]`
+- **S3 Images Bucket**: `photo-uploader-images-[your-name]`
 
 ## 🚀 Advanced Extensions
 
@@ -262,14 +312,25 @@ curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrl
 2. **Image Analysis**: Integrate with AWS Rekognition
 3. **User Authentication**: Add Cognito integration
 4. **Real-time Updates**: Use WebSockets for live upload status
-5. **Image Gallery**: Build a React/Vue frontend to display images
+5. **CDN Optimization**: Configure CloudFront caching strategies
+6. **Multi-region**: Deploy across multiple AWS regions
 
 ## 💡 Cost Optimization Tips
 
-- Use S3 Intelligent Tiering for cost-effective storage
+- Use S3 Intelligent Tiering for image storage
 - Set DynamoDB to On-Demand billing for development
-- Monitor Lambda execution time and memory usage
-- Use CloudWatch to track usage and costs
+- Monitor CloudFront usage and costs
+- Set up CloudWatch billing alerts
+- Use CloudFront edge caching effectively
+
+## 🚨 Security Best Practices
+
+- Use presigned URLs with short expiration times
+- Implement file type validation in Lambda
+- Add file size limits
+- Monitor for unusual usage patterns
+- Use CloudTrail for API access logging
+- Secure CloudFront with proper headers
 
 ## 🔗 Useful Resources
 
@@ -277,7 +338,14 @@ curl "https://your-api-id.execute-api.us-east-1.amazonaws.com/images?generateUrl
 - [S3 Event Notifications](https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html)
 - [Lambda with S3](https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html)
 - [DynamoDB JavaScript Examples](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.JavaScript.html)
+- [CloudFront Distribution Setup](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/)
 
 ---
 
-**Note**: Replace `[your-name]` with your actual identifier and update all endpoint URLs with your specific AWS resource URLs.
+**Remember to:**
+
+1. Replace `[your-name]` with your actual identifier
+2. Update all API endpoints with your specific AWS resource URLs
+3. Test each component individually before integration testing
+4. Monitor CloudWatch logs for troubleshooting
+5. Invalidate CloudFront cache when updating frontend files
