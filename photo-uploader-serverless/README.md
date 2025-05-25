@@ -86,7 +86,7 @@ Build a serverless photo uploader that:
 1. **Lambda Console** → **Create function**
 
    - **Function name**: `generateUploadURL`
-   - **Runtime**: Node.js 18.x
+   - **Runtime**: Node.js 18.x or later
    - **Execution role**: `PhotoUploaderLambdaRole`
 
 2. **Function code**: [View Lambda Function Code](./lambda/generate_upload_url.js)
@@ -96,7 +96,7 @@ Build a serverless photo uploader that:
 1. **Lambda Console** → **Create function**
 
    - **Function name**: `storePhotoMetadata`
-   - **Runtime**: Node.js Latest version
+   - **Runtime**: Node.js 18.x or later
    - **Execution role**: `PhotoUploaderLambdaRole`
 
 2. **Function code**: [View Lambda Function Code](./lambda/store_metadata.js)
@@ -106,7 +106,7 @@ Build a serverless photo uploader that:
 1. **Lambda Console** → **Create function**
 
    - **Function name**: `fetchUserImages`
-   - **Runtime**: Node.js 18.x
+   - **Runtime**: Node.js 18.x or later
    - **Execution role**: `PhotoUploaderLambdaRole`
 
 2. **Function code**: [View Lambda Function Code](./lambda/fetch_images.js)
