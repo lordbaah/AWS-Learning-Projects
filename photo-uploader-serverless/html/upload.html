@@ -1,0 +1,22 @@
+
+<input type="file" id="photoInput" />
+<button onclick="uploadPhoto()">Upload</button>
+
+<script>
+async function uploadPhoto() {
+    const fileInput = document.getElementById('photoInput');
+    const file = fileInput.files[0];
+    if (!file) return alert('Select a photo');
+
+    const response = await fetch(`https://your-api-id.execute-api.us-east-1.amazonaws.com/prod/upload-url?filename=${file.name}`);
+    const data = await response.json();
+
+    await fetch(data.uploadURL, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file
+    });
+
+    alert('Upload successful!');
+}
+</script>
