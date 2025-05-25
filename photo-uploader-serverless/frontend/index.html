@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photo Uploader</title>
+    <link rel="stylesheet" href="style.css" />
+    <style></style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📸 Photo Uploader</h1>
+      <p>Upload your photos to AWS S3 with automatic metadata storage</p>
+
+      <div class="upload-area" id="uploadArea">
+        <p>Drag and drop images here or click to select</p>
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*"
+          multiple
+          style="display: none"
+        />
+        <button
+          class="upload-btn"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          Choose Images
+        </button>
+      </div>
+
+      <div class="progress" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div id="status"></div>
+
+      <div id="uploadedImages"></div>
+
+      <div class="gallery">
+        <h2>📷 Your Photo Gallery</h2>
+        <button class="refresh-btn" onclick="loadGallery()">
+          🔄 Refresh Gallery
+        </button>
+        <div id="galleryContainer">
+          <div class="loading">Loading your photos...</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="index.js"></script>
+  </body>
+</html>
